@@ -1,0 +1,152 @@
+% Main script: Calculate the matrices and their inverses corresponding to different values of m.
+
+%Step1: Define parameters
+%am = 60;               % corresponding to Singapore's 2003 outbreak of SARS
+am = 30;                % corresponding to COVID-19 outbreak in China
+%I0 = rolling_weekly_avg(1);
+I0=CD_prime(1)/D;       % corresponding to COVID-19 outbreak in China
+%w_max = 1;             % corresponding to Singapore's 2003 outbreak of SARS
+w_max = 50;             % corresponding to COVID-19 outbreak in China
+%NN =rolling_weekly_avg ;% corresponding to Singapore's 2003 outbreak of SARS
+NN =total;              % corresponding to COVID-19 outbreak in China
+fprintf('am = %d\n', am);
+fprintf('NN = \n');
+disp(NN');
+%%
+% Step2: Call the function to calculate the matrix and its inverse, and generate the matrix before t0+a_{+}.
+[matrices, inverses] = calculate_inverse2(NN, am, I0);
+
+% Anlysis the consequence
+for m = 2:am
+    idx = m-1;  % index of cell array
+    
+    % Obtain current matrix and its inverse.
+    A = matrices{idx};
+    A_inv = inverses{idx};
+    
+    % Verify the accuracy of the inverse matrix.
+    product = A * A_inv;
+    identity = eye(size(A));
+    error = norm(product - identity, 'fro');  % Frobenius norm
+    
+    fprintf('\n--- m = %d Anlysis the consequence ---\n', m);
+    fprintf('matrix condition number: %.4e\n', cond(A));
+    fprintf('Inverse matrix verification error: %.4e\n', error);  
+    results = cell(size( inverses, 1), size( inverses, 2));
+
+end
+%%
+% Step3: Store the matrices before t_0 + a_{+}  in matrices1 and inverses1, and then calculate the matrices after t_0 + a_{+} .
+matrices1=matrices;
+inverses1=inverses;
+[matrices, inverses] = calculate_w_matrices2(NN, am, w_max);
+
+% Anlysis the consequence
+  for w = 1:w_max
+        % Obtain current matrix and its inverse.
+        A = matrices{w};
+        A_inv = inverses{w};
+        
+        % Verify the accuracy of the inverse matrix.
+        product = A * A_inv;
+        identity = eye(size(A));
+        error = norm(product - identity, 'fro');
+        
+        fprintf('\n--- w = %d Anlysis the consequence ---\n', w);
+        fprintf('the size of matrix: %d×%d\n', size(A, 1), size(A, 2));
+        fprintf('matrix condition number: %.4e\n', cond(A));
+        fprintf('Inverse matrix verification error: %.4e\n', error);
+  end
+  matrices=[matrices1;matrices];
+  inverses=[inverses1;inverses];
+%%  
+% caculate R(t,a)
+for k = 1:size( inverses, 1)
+    % caculate the dimension of current matrix.
+    if k<=size( inverses1, 1)
+      sig = k ;
+      current_NN = NN(sig+1);
+      vec = ones(sig+1, 1) * current_NN;
+      %vec = ones(sig, 1) * current_NN;
+    end
+    if k>size( inverses1, 1)
+      current_NN = NN(k+1); 
+      vec = ones(size(inverses1, 1)+1, 1) * current_NN;
+      %vec = ones(size(inverses1, 1), 1) * current_NN;
+    end
+    
+    % Extract the current matrix from the inverses.
+    current_matrix = inverses{k};
+    
+    % Execute matrix multiplication.
+    results{k} = current_matrix * vec;
+end
+
+results=[NN(1)/I0;results;];
+% Run the above code
+% At this point, `results{k}` contains the result of each matrix multiplication
+% Perform padding
+% Target length
+target_length = size(results,1)+1;
+
+% Create a new padded cell array
+padded_results = cell(size(results));  % Create a cell array of the same size as results
+
+% Traverse each element
+for i = 1:size(results,1)  
+    % Get the current element
+    current_cell = results{i};
+    % Create the target vector (all zeros)
+    padded_vector = zeros(target_length, 1);
+    % Get the length of the current vector
+    current_length = length(current_cell);
+    % Copy the original data to the beginning of the target vector
+    for j = 1:current_length
+        padded_vector(j) = current_cell(j);
+    end
+    % Store the padded vector
+    padded_results{i} = padded_vector;
+    
+end
+%padded_results = [{zeros(am+1,1)};padded_results];
+% set parameters
+t0f = 0;       % the initial time
+a_plus = am;   % the maximum of age of infection
+
+% Create a time vector (x-axis)
+% Time range: t0 to t0+a_{plus}
+t = t0f : 1 : t0f + a_plus+w;
+
+% Create an infection age vector (y-axis)
+% Infection age: 0 to a_{plus}
+a = 0 : 1 : a_plus;
+
+% Initialize the Z matrix (to store reproduction numbers)
+Z = zeros(length(a), length(t));  
+
+% Fill the Z matrix
+for i = 1:length(t)  % Traverse each time point
+    % Get the data for the current time point
+    current_data = padded_results{i};  
+    
+    % Store the data in the corresponding column of the Z matrix
+    for j = 1:length(a) % Traverse each age of infection
+        Z(j,i) = current_data(j);
+    end
+end
+%%
+% Plot the 3D surface
+subplot(1, 1, 1);
+[T_grid, A_grid] = meshgrid(t, a);
+surf(T_grid, A_grid, Z, 'EdgeColor', 'none');
+colormap(jet);  % Use the rainbow color scheme
+%colorbar;      % Display the color bar
+shading interp; % Smooth shading
+
+% Add labels and title
+xlabel('Date');
+ylabel('Infection Age (a)');
+zlabel('Reproduction Number');
+
+% Set the view
+view(45, 30);  % Azimuth 45°, elevation 30°
