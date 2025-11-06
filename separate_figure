@@ -1,0 +1,53 @@
+% Create a figure with two subplots
+figure( 'Position', [100, 100, 1200, 500]);
+
+% ========== Subplot 1: Fixed time, varying infection age ==========
+subplot(1, 2, 1);  % 1 row, 2 columns, first plot
+hold on;
+
+% Define target time points
+%time_points = [5,10,15,20,25];
+time_points = [10,20,30,40,50];
+colors = lines(length(time_points));  % Get distinct colors
+
+% Plot curves for each fixed time point
+for i = 1:length(time_points)
+    t = time_points(i);
+    % Extract data for time t (add 1 for 1-based indexing)
+    plot(0:size(Z,1)-1, Z(:, t+1), 'LineWidth', 1.5, ...
+        'Color', colors(i,:), 'DisplayName', ['t=', num2str(t)]);
+end
+
+% Add plot decorations
+xlabel('Infection Age (a)');
+ylabel('Z-value');
+legend('show', 'Location', 'best');
+grid on;
+xlim([0, max(0:size(Z,1)-1)]);  % Set x-axis from 0 to max age
+hold off;
+
+% ========== Subplot 2: Fixed infection age, varying time ==========
+subplot(1, 2, 2);  % 1 row, 2 columns, second plot
+hold on;
+
+% Define target age points
+%age_points = [2,6,10,14,18];
+age_points = [0,10,20,30,40];
+markers = {'o-', 's-', 'd-', '^-', 'v-'};  % Different markers for each curve
+
+% Plot curves for each fixed infection age
+for i = 1:length(age_points)
+    a = age_points(i);
+    % Extract data for age a (add 1 for 1-based indexing)
+    plot(0:size(Z,2)-1, Z(a+1, :), markers{i}, 'LineWidth', 1.5, ...
+        'MarkerSize', 6, 'DisplayName', ['a=', num2str(a)]);
+end
+
+% Add plot decorations
+xlabel('Time (t)');
+ylabel('Z-value');
+legend('show', 'Location', 'best');
+grid on;
+xlim([0, max(0:size(Z,2)-1)]);  % Set x-axis from 0 to max time
+hold off;
+
