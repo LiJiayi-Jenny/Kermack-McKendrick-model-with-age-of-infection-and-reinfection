@@ -1,0 +1,60 @@
+% Input data
+data = [2,0,0,1,0,0,0,1,1,1,3,3,6,4,3,1,0,6,12,13,10,6,8,2,4,1,1,4,5,2,3,1,4,1,5,2,6,6,9,12,3,4,6,5,2,5,4,5,3,1,5,1,0,2,2,2,1,0,0,0,0,1];
+%data = [3.1522,3.7029,4.3495,5.1088,6.0001,7.0464,8.2742,9.7150,11.4050,13.3868,15.7102,18.4326,21.6212,25.3537,29.7199,34.8234,40.7833,47.7356,55.8352,65.2574,76.1989,88.8782,103.5355,120.4307,139.8397,162.0477,187.3390,215.9823,248.2094,284.1879,323.9852,367.5252,414.5369,464.4979,516.5780,569.5895,621.9545,671.7047,716.5257,753.8617,781.0865,795.7384,795.7997 ,779.9841];
+%data=[80,892,346,356,360,576,800,1000,1242,1967,1800,1501,1990,1379,1980,1500,1104,13436,3910,1923,1590,1690,1600,1660,615,320,314,500,348,400,370,390,360,420];
+% Calculate rolling weekly average (window: current + previous 6 days)
+windowSize = [6, 0]; % Includes current point and previous 6 points
+rolling_weekly_avg = movmean(data, windowSize, 'Endpoints', 'shrink');
+
+% Extract last day's result
+last_avg = rolling_weekly_avg(end);
+
+% Create date sequence (2003-02-25 to 2003-04-07)
+startDate = datetime(2003, 2, 25);
+endDate = datetime(2003, 4, 27);
+dates = linspace(startDate, endDate, numel(data));
+
+% Create figure
+figure('Position', [100, 100, 900, 500], 'Name', 'Infectious Disease Analysis')
+
+% Plot raw data (gray dashed line)
+plot(dates, data, '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 1.5, 'DisplayName', 'Daily New Cases');
+hold on;
+
+% Plot rolling weekly average (blue solid line)
+plot(dates, rolling_weekly_avg, 'b-', 'LineWidth', 2.5, 'DisplayName', '7-day Moving Average');
+
+% Add title and labels
+title('Analysis of New Infectious Disease Cases in 2003', 'FontSize', 16, 'FontWeight', 'bold');
+xlabel('Date', 'FontSize', 14);
+ylabel('Number of Cases', 'FontSize', 14);
+grid on;
+
+% Set date tick format to month-day
+datetick('x', 'mm-dd', 'keepticks'); % 修改为月-日格式
+xtickangle(30);
+
+% Add legend
+legend('Location', 'northwest', 'FontSize', 12);
+
+% Set axes appearance
+ax = gca;
+ax.FontSize = 12;
+ax.XGrid = 'on';
+ax.YGrid = 'on';
+ax.GridLineStyle = '--';
+ax.GridAlpha = 0.3;
+
+% Create annotation text
+annotationText = {
+    ['Final Date: ', datestr(dates(end), 'yyyy-mm-dd')], 
+    ['7-day Average: ', sprintf('%.4f', last_avg)], 
+    ['Calculation Window: Index ', num2str(numel(data)-6), '-', num2str(numel(data))]
+};
+
+% Add information box
+annotation('textbox', [0.15, 0.7, 0.2, 0.15], 'String', annotationText, ...
+    'FitBoxToText', 'on', 'BackgroundColor', [1 1 1], 'FontSize', 12);
+
+% Optional: Save the image
+% saveas(gcf, 'infection_trend_analysis.png');
