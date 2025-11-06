@@ -1,0 +1,68 @@
+% Define parameters
+L = 3216.0;
+k=0.1613;
+t0=26.8;
+nu=0.88;
+D=0.04;
+% Create a time vector t with range [−20,60] and step size 1
+
+t=-20:1:60;
+dt = t(2) - t(1); % step size
+
+% Caculate CD(t)
+CD = L ./ (1 + exp(-k.*(t - t0)));
+
+% Calculate the first derivative of CD'(t)
+CD_prime = ((L * k) .* exp(-k.*(t - t0))) ./ ((1 + exp(-k.*(t - t0))).^2);
+
+% Calculate the second derivative of CD''(t)
+CD_prime2 = L * k^2 * exp(-k*(t - t0)) .* (exp(-k*(t - t0)) - 1) ./ ...
+            (1 + exp(-k*(t - t0))).^3;
+
+% Caculate N(t) = [ (ν+D)*CD'(t) + CD''(t) ] / D
+N = ((nu + D)*CD_prime + CD_prime2) ./ D;
+I0=CD_prime(1)/D;
+
+% Create a figure window
+figure;
+
+% Plot the red curve of CD(t)
+subplot(2, 1, 1);
+plot(t, CD, 'r', 'LineWidth', 2);
+xlabel('Time (days)');
+ylabel('CD(t)');
+grid on;
+% Mark the inflection point
+%hold on;
+%plot(t0, L/2, 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r');
+%text(t0, L/2, sprintf('  Inflection Point (%.1f, %.1f)', t0, L/2), ...
+%    'VerticalAlignment', 'bottom');
+% Mark the asymptote
+%line([-50, 60], [L, L], 'Color', 'k', 'LineStyle', '--');
+%line([-17, 62], [L, L], 'Color', 'k', 'LineStyle', '--');
+%line([-20, -8], [L, L], 'Color', 'k', 'LineStyle', '--');
+%text(40, L+100, sprintf('Asymptote L = %.1f', L));
+%hold off;
+
+% Plot the blue curve of N(t)
+subplot(2, 1, 2);
+t_valid = t;
+N_valid = N;
+plot(t_valid, N_valid, 'b', 'LineWidth', 2);
+
+xlabel('Time (days)');
+ylabel('N(t)');
+xlim([-20, 60]);
+grid on;
+% Mark the peak
+%[maxN, idx] = max(N_valid);
+%t_max = t_valid(idx);
+%hold on;
+%plot(t_max, maxN, 'bo', 'MarkerSize', 8, 'MarkerFaceColor', 'b');
+%text(t_max, maxN, sprintf('  Peak (%.1f, %.1f)', t_max, maxN), ...
+ %   'VerticalAlignment', 'bottom');
+%hold off;
+total=[];
+for h=-20:1:60
+    total=[total,N(h+21)];
+end
